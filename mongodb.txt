@@ -1,0 +1,461 @@
+关系型数据库
+
+采用关系模型来组织数据结构的数据库 （二维表）
+
+优点 ：容易理解，类似我们常见的表格 
+       使用方便，都是使用sql语句，SQL语句非常成熟
+       数据一致性高，冗余度低，完整性好
+       技术成熟，可以使用外部链接等比较复杂的操作
+
+缺点 ：不能很好的满足高并发需求，每次都需要进行sql语句的解析
+       
+       针对含量数据的瞬间爆发读写性能不足，关系型数据库内部每步操作都需要加锁保证操作的原子性
+
+       数据扩展普遍比非关系型困难
+       数据一致性高，有时会浪费大量空间
+
+非关系型数据库 （NoSql --> Not only  Sql）
+优点 ： 高并发，大数据读写能力强
+        支持分布式，容易扩展
+	弱化了数据结构，降低了数据的一致性
+
+缺点 ： 通用性差，没有像sql那样一致的操作
+        操作灵活，容易混乱
+	没有join，有的数据库事务支持等操作
+
+Nosql的使用情况：
+
+1. 数据一致性要求低
+2. 数据库并发处理要求高
+3. 数据库设计时对大小的估算不确定，需要分布拓展
+4. 给定的数据比较容易建立起Nosql的模型
+
+
+
+创建数据库
+use  databasename
+
+创建一个数据库
+use  stu
+
+
+查看数据库
+show  dbs   
+
+数据库的备份和恢复
+
+备份   mongodump  -h  dbhost  -d  dbname   -o  dbdir
+
+mongodump  -h 127.0.0.1 -d stu -o student
+将本机下 stu 数据库备份到 当前目录的student文件夹中
+会在student文件夹中自动生成一个stu文件夹则为备份文件
+
+恢复  mongorestore  -h  <dbhost>:<port> -d  dbname  <path>
+
+mongorestore -h 127.0.0.1:27017 -d test student/stu
+将student文件夹下的备份文件stu恢复到本机的test数据库
+
+数据库的监测命令
+mongostat 
+insert query update delete   ：每秒增查改删的次数
+getmore command  每秒运行命令次数
+dirty used flushes  每秒操作磁盘的次数
+vsize   res   使用虚拟内存和物理内存
+
+删除数据库
+db.dropDatabase()
+删除db所代表的数据库
+
+集合的创建
+db.createCollection(collection_name)
+
+db.createCollection("class2")
+在当前数据库下创建一个名字为class2的集合
+
+查看数据库中集合
+show tables
+show collections
+
+创建集合2
+
+当向一个集合中插入文档时，如果该集合不存在则自动创建
+db.collectionName.insert()  
+
+db.class0.insert({a:1})
+如果class0不存在则会创建class0集合并插入该数据
+
+删除集合 
+db.collectionName.drop()
+
+db.class0.drop()   
+删除class0集合
+
+集合重命名 
+db.collectionName.renameCollection('new_name')
+
+db.class2.renameCollection('class0')
+将class2重命名为class0
+
+
+支持的数据类型
+
+类型                值
+整型                整数
+布尔类型            true  false
+浮点型              小数
+Arrays              数组类型 [1,2,3]
+Timestamp           时间戳
+Date                时间日期
+Object              内部文档
+Null                空值
+Symbol              特殊字符
+String              字符串
+Binary data         二进制字串
+code                代码 
+regex               正则表达式
+ObjectId            ObjectId子串
+	     
+
+插入文档
+db.collectionName.insert()
+ 
+db.class0.insert({name:'Lucy',age:16,sex:'w'})
+插入多条文档
+db.collectionName.insert([{},{},{}])
+
+save  插入数据
+db.collectionName.save()
+db.class0.save({_id:2,name:'八戒',age:17,sex:'m'})
+
+db.collectionName  集合对象
+
+获取集合对象 ： 
+db.getCollection('collection_name')
+
+db.getCollection("class0").insert({name:'悟空',age:1700})
+
+
+查找操作
+find(query,field)
+
+db.class0.find({age:17},{_id:0})
+* 如果不写第一个参数则表示查找所有内容
+
+findOne()
+db.class0.findOne({age:17},{_id:0})
+
+query的更多用法
+
+比较操作符
+$eq  等于
+e.g.  db.class0.find({age:{$eq:17}},{_id:0})
+
+$lt  小于  < 
+db.class0.find({age:{$lt:17}},{_id:0})
+
+$lte  小于等于   <=
+db.class0.find({age:{$lte:17}},{_id:0})
+
+$gt   大于  > 
+db.class0.find({age:{$gt:17}},{_id:0})
+
+$gte   大于等于 >=
+db.class0.find({age:{$gte:17}},{_id:0})
+
+$ne   不等于   !=
+db.class0.find({age:{$ne:17}},{_id:0})
+
+$in   包含
+db.class0.find({age:{$in:[16,17,18]}},{_id:0})
+
+$nin  不包含
+db.class0.find({age:{$nin:[16,17,18]}},{_id:0})
+
+逻辑操作符
+$and   逻辑与
+db.class0.find({$and:[{age:17},{name:'Lei'}]})
+
+$or  逻辑或
+db.class0.find({$or:[{age:{$lt:22}},{name:'悟空'}]},{_id:0})
+
+$not   逻辑非
+db.class0.find({age:{$not:{$eq:17}}},{_id:0})
+
+$nor  既不也不
+db.class0.find({$nor:[{age:{$gt:18}},{sex:'m'}]},{_id:0})
+
+
+数组查找 
+查看数组中包含某一项的
+db.class1.find({hobby:'吃'},{_id:0})
+
+$all 
+db.class1.find({hobby:{$all:['拍电影','代言']}},{_id:0})
+
+
+$size 查找数组元素个数为指定个数的文档
+ db.class1.find({hobby:{$size:3}},{_id:0})
+查找hobby数组中包含三项的文档
+
+数组切片显示
+$slice  
+对数组切片显示
+
+db.class1.find({hobby:{$size:3}},{_id:0,hobby:{$slice:2}})
+显示数组的前两项
+
+ db.class1.find({hobby:{$size:3}},{_id:0,hobby:{$slice:[1,2]}})
+跳过第一项，显示后面两项
+
+
+其他查找方法：
+$exists
+判断一个域是否存在
+
+查找存在sex域的文档
+db.class0.find({sex:{$exists:true}},{_id:0})
+
+查找不存在sex域的文档
+db.class0.find({sex:{$exists:false}},{_id:0})
+
+distinct() 
+查看一个集合中某个域值的覆盖范围
+
+查看集合中age域的值都有哪些
+db.class0.distinct('age')
+
+pretty()
+将查询结果格式化显示
+db.class0.find().pretty()
+
+limit(n)
+查询结果显示前 n条
+
+查询结果显示前3个
+db.class0.find({},{_id:0}).limit(3)
+
+skip(n)
+显示时跳过前n条
+
+显示时跳过前三条
+db.class0.find({},{_id:0}).skip(3)
+
+count()
+对查找结果计数统计
+db.class0.find({sex:'m'},{_id:0}).count()
+
+sort({键：1/-1})
+对查找结果排序
+1 表示按照升序排列， -1 表示按照降序排列
+
+对查找结果按照年龄升序排列
+db.class0.find({age:{$exists:true}},{_id:0}).sort({age:1})
+
+
+删除文档
+db.collectionName.remove(query,justOne)
+删除指定的文档
+db.class0.remove({$or:[{age:{$exists:false}},{age:{$gt:100}}]})
+
+
+删除集合中所有文档
+db.collectionName.remove({})
+
+db.collectionName.update(query,update,upsert,multi)
+修改一个文档
+    query :  删选要修改的文档 相当于where子句  
+                 用法同查找
+	update ： 将数据更新为什么内容  相当于set操作 
+	          需要使用修改器操作符
+	upsert ： bool值 默认为false  表示如果query的文档不           存在则无法修改
+	          如果设置为true  表示如果query的文档不存在则根据query和update参数插入新的文档
+	multi  ： bool值 默认为false 如果有多条符合筛选条件           的文档则只修改第一条
+	          如果设置为true 则修改所有符合条件的文档
+
+修改器操作符
+
+$set 
+修改一个域的值
+增加一个域
+db.class0.update({name:'阿红'},{$set:{sex:'w'}})
+
+$unset 
+删除一个域
+删除文档的sex和age域 （后面数字习惯写1，0 都表示删除）
+db.class0.update({name:'八戒'},{$unset:{sex:0,age:0}})
+
+$rename
+修改一个域的名称
+
+修改所有的sex域为gender
+db.class0.update({},{$rename:{sex:'gender'}},false,true)
+
+$setOnInsert
+如果update操作插入新的文档，则补充插入内容
+db.class0.update({name:'阿华'},{$set:{age:21},$setOnInsert:{sex:'m',tel:'123456'}},true)
+
+数组修改器
+$push  向数组中添加一项
+db.class1.update({name:"Abby"},{$push:{score:30}})
+
+$pushAll  向数组中添加多项
+db.class1.update({name:"Jame"},{$pushAll:{score:[10,20]}})
+
+$each  逐个操作
+db.class1.update({name:"Lily"},{$push:{score:{$each:[10,5]}}})
+
+$position
+选择数据位置进行操作   必须和each合用
+db.class1.update({name:"Lucy"},{$push:{score:{$each:[10,10],$position:1}}})
+
+$pull  从数组中删除一个元素
+db.class1.update({name:'Lucy'},{$pull:{score:10}})
+
+$pullAll  从数组中删除多个元素
+db.class1.update({name:'Jame'},{$pullAll:{score:[10,20]}})
+
+$pop  弹出数组中的一项
+ db.class1.update({name:'Lily'},{$pop:{score:-1}})
+* -1表示弹出数组中的第一项  1 表示弹出最后一项
+
+时间类型   
+mongo中存储时间的格式 ：ISODate
+
+自动生成当前时间
+db.class2.insert({title:'入门',date:new Date()})
+
+生成当前时间
+db.class2.insert({title:'精通',date:ISODate()})
+
+将生成时间变为字符串存储
+db.class2.insert({title:'AI',date:Date()})
+
+指定时间的转换
+ISOData() 
+生成mongo时间类型
+
+db.class2.insert({title:'Python 爬虫',date:ISODate("20190101 11:11:11")})
+
+时间戳获取
+db.class2.insert({title:'PythonWeb',date:ISODate().valueOf()})
+
+
+null
+如果某个域存在却没有值可以设置为null
+db.class2.insert({title:'Python 秘籍',price:null})
+
+表示某个域不存在可以通过null进行匹配
+db.class2.find({date:null},{_id:0})
+
+索引
+
+指的是建立指定键值及所在文档中存储位置的对照清单。使用索引可以方便我们进行快速查找，减少遍历次数，提高查找效率
+
+mongo创建索引
+ensureIndex()
+
+db.class0.ensureIndex({'name':1})
+
+查看一个集合中的索引
+db.class0.getIndexes()
+
+删除索引
+dropIndex('indexname')
+db.class0.dropIndex('name_1')
+db.class0.dropIndex({name:1})
+
+dropIndexes()
+删除所有索引
+
+db.class0.dropIndexes()
+
+复合索引 
+db.class0.ensureIndex({name:1,age:-1})
+
+数组索引
+db.class1.ensureIndex({'score':1})
+
+唯一索引 
+db.class0.ensureIndex({name:1},{'unique':true})
+
+聚合
+db.collectionName.aggregate()
+ 
+
+聚合操作符
+
+$group  分组  和分组操作符配合使用确定按什么分组
+
+
+$sum 求和
+db.class0.aggregate({$group:{_id:'$gender',num:{$sum:1}}})
+          聚合       分组    按gender分组  统计结果名
+
+
+$avg  求平均数
+db.class0.aggregate({$group:{_id:'$gender',num:{$avg:'$age'}}})
+
+$min  求最小值
+db.class0.aggregate({$group:{_id:'$gender',name:{$min:'$name'}}})
+
+$max
+db.class0.aggregate({$group:{_id:'$gender',name:{$max:'$name'}}})
+
+$first 
+返回每组第一个文档指定域值
+db.class0.aggregate({$group:{_id:'$gender',name:{$first:'$name'}}})
+
+$last
+返回每组最后一个文档指定域值
+db.class0.aggregate({$group:{_id:'$gender',name:{$last:'$name'}}})
+
+$match  过滤数据
+db.class0.aggregate({$match:{name:{$gt:'Tom'}}})
+
+$skip 跳过前几条文档
+db.class0.aggregate({$skip:2})
+
+$limit  显示几条文档
+db.class0.aggregate({$limit:2})
+
+$sort  排序
+ db.class0.aggregate({$sort:{name:1}})
+
+固定集合
+
+mongo中可以创建大小固定的集合，称之为固定集合，固定集合的性能出色，适用于很多场景
+比如 ： 日志处理，  临时缓存
+
+插入速度快
+顺序查询速度快
+能够淘汰早期数据
+可以控制集合空间
+
+创建：
+db.createCollection(collectionName,{capped:true,size:10000,max:1000})
+
+size :设置固定集合的大小  kb
+max ： 最多能容纳多少文档
+
+创建一个最多包含三条文档的集合
+db.createCollection('log',{capped:true,size:10,max:3})
+
+
+文件存储
+
+数据库存储文件的方式 
+mongo中  使用GridFS方法 大文件存储
+
+mongofiles -d  dbname   put   file
+               数据库         要存储的文件
+*如果数据库不存在则自动创建
+
+fs.files
+{ "_id" : ObjectId("5b0770c169d72e1e3a6eebda"), "chunkSize" : 261120, "uploadDate" : ISODate("2018-05-25T02:11:13.986Z"), "length" : 8313457, "md5" : "4b39deb86dcb6ece44ef52a69dcd6e1a", "filename" : "xly.zip" }
+
+fs.chunks
+{ "_id" : ObjectId("5b0770c169d72e1e3a6eebee"), "files_id" : ObjectId("5b0770c169d72e1e3a6eebda"), "n" : 19, "data" : BinData(0,"wGTrj3......)}
+
+
+获取数据库中文件
+mongofiles -d grid get xly.zip
